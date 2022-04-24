@@ -16,6 +16,13 @@ app.all("/", (req, res, next) => {
   next();
 });
 
+app.get("/", (req, res) => {
+  res.status(200).json({
+    status: 200,
+    result: "Hello World",
+  });
+});
+
 //UC-201
 app.post("/api/user", (req, res) => {
   let user = req.body;

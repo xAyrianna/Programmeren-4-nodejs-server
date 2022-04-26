@@ -12,6 +12,7 @@ app.all("*", (req, res, next) => {
   next();
 });
 
+//Routes for usecase 2; user
 app.use(userRouter);
 
 app.all("*", (req, res) => {
@@ -19,6 +20,11 @@ app.all("*", (req, res) => {
     status: 404,
     result: "Endpoint not found",
   });
+});
+
+//Error handler
+app.use((err, req, res, next) => {
+  res.status(err.status).json(err);
 });
 
 app.listen(port, () => {

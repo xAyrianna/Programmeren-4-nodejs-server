@@ -14,11 +14,12 @@ let controller = {
       assert(typeof password === "string", "Password must be a string");
       next();
     } catch (err) {
-      console.log(err);
-      res.status(400).json({
+      const error = {
         status: 400,
-        result: err.toString(),
-      });
+        result: err.message,
+      };
+
+      next(error);
     }
   },
   addUser: (req, res) => {
@@ -70,10 +71,11 @@ let controller = {
         result: user,
       });
     } else {
-      res.status(404).json({
+      const error = {
         status: 404,
         result: `User with ID ${userId} not found`,
-      });
+      };
+      next(error);
     }
   },
   updateUserById: (req, res) => {

@@ -13,7 +13,7 @@ app.all("*", (req, res, next) => {
   next();
 });
 
-//Routes for usecase 2; user
+// Routes for usecase 2; user
 app.use("/api/", userRouter);
 
 app.all("*", (req, res) => {

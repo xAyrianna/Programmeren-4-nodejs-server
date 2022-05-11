@@ -46,7 +46,9 @@ let controller = {
           connection.release();
 
           // Handle error after the release.
+
           if (error) {
+            console.log(error.sqlMessage);
             res.status(409).json({
               status: 409,
               result: `User with emailaddress: ${user.emailAdress} already exists.`,
@@ -145,9 +147,10 @@ let controller = {
         ],
         function (error, results, fields) {
           if (error) {
+            console.log(error.sqlMessage);
             res.status(401).json({
               status: 401,
-              result: `Updating user not possible, provided email already taken`,
+              result: `Updating user not possible, email is already taken.`,
             });
             return;
           }
@@ -163,8 +166,8 @@ let controller = {
               }
             );
           } else {
-            res.status(404).json({
-              status: 404,
+            res.status(400).json({
+              status: 400,
               result: `Could not find user with id: ${id}`,
             });
           }
@@ -191,13 +194,13 @@ let controller = {
 
           // Don't use the connection here, it has been returned to the dbconnection.
           if (results.affectedRows > 0) {
-            res.status(202).json({
-              status: 202,
+            res.status(200).json({
+              status: 200,
               result: `User with id: ${id} has been deleted.`,
             });
           } else {
-            res.status(404).json({
-              status: 404,
+            res.status(400).json({
+              status: 400,
               result: `Could not find user with id: ${id}`,
             });
           }

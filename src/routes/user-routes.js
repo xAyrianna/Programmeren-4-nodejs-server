@@ -22,7 +22,11 @@ router.get("/user/profile", userController.getUserProfile);
 router.get("/user/:userId", userController.getUserById);
 
 //UC-205
-router.put("/user/:userId", userController.updateUserById);
+router.put(
+  "/user/:userId",
+  userController.validateUser,
+  userController.updateUserById
+);
 
 //UC-206
 router.delete("/user/:userId", userController.deleteUserById);

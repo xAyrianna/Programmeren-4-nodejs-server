@@ -1,7 +1,5 @@
 const assert = require("assert");
-let database = [];
 const dbconnection = require("../../database/dbconnection");
-let id = 0;
 
 let controller = {
   validateUser: (req, res, next) => {
@@ -63,28 +61,48 @@ let controller = {
       );
     });
   },
-  getAllUsers: (req, res) => {
+  getAllUsers: (req, res, next) => {
+    const { firstName, isActive } = req.query;
+    console.log(`name = ${firstName} isActive = ${isActive}`);
+
+    let queryString = "SELECT * FROM `user`";
+
+    if (firstName || isActive) {
+      queryString += " WHERE ";
+      if (firstName) {
+        queryString += `firstName LIKE '%${firstName}%'`;
+      }
+      if (firstName && isActive) {
+        queryString += " AND ";
+      }
+      if (isActive) {
+        queryString += `isActive='${isActive}'`;
+      }
+    }
+    console.log(queryString);
+
     dbconnection.getConnection(function (err, connection) {
-      if (err) throw err; // not connected!
+      if (err) {
+        next(err);
+      } // not connected!
 
       // Use the connection
-      connection.query(
-        "SELECT * FROM user;",
-        function (error, results, fields) {
-          // When done with the connection, release it.
-          connection.release();
+      connection.query(queryString, function (error, results, fields) {
+        // When done with the connection, release it.
+        connection.release();
 
-          // Handle error after the release.
-          if (error) throw error;
-
-          // Don't use the connection here, it has been returned to the dbconnection.
-          console.log("#results =", results.length);
-          res.status(200).json({
-            status: 200,
-            result: results,
-          });
+        // Handle error after the release.
+        if (error) {
+          next(error);
         }
-      );
+
+        // Don't use the connection here, it has been returned to the dbconnection.
+        console.log("#results =", results.length);
+        res.status(200).json({
+          status: 200,
+          result: results,
+        });
+      });
     });
   },
   getUserProfile: (req, res) => {

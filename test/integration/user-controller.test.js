@@ -1,3 +1,5 @@
+process.env.DB_DATABASE = process.env.DB_DATABASE || "shareamealtestdb";
+
 const chai = require("chai");
 const chaiHttp = require("chai-http");
 const server = require("../../index");
@@ -8,7 +10,7 @@ chai.use(chaiHttp);
 
 describe("Manage users", () => {
   describe("UC-201 Register /api/user", () => {
-    beforeEach((done) => {
+    before((done) => {
       dbconnection.getConnection(function (err, connection) {
         if (err) throw err; // not connected!
 

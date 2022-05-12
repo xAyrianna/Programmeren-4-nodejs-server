@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const userRouter = require("./src/routes/user-routes");
+const userRoutes = require("./src/routes/user-routes");
+const authRoutes = require("./src/routes/auth-routes");
 require("dotenv").config();
 
 const port = process.env.PORT;
@@ -13,8 +14,9 @@ app.all("*", (req, res, next) => {
   next();
 });
 
-// Routes for usecase 2; user
-app.use("/api/", userRouter);
+//Alle routes beginnen met /api
+app.use("/api", userRoutes);
+app.use("/api", authRoutes);
 
 app.all("*", (req, res) => {
   res.status(404).json({
@@ -25,7 +27,11 @@ app.all("*", (req, res) => {
 
 //Error handler
 app.use((err, req, res, next) => {
-  res.status(err.status).json(err);
+  console.log("Error: " + err.toString());
+  res.status(500).json({
+    status: 500,
+    message: err.toString(),
+  });
 });
 
 app.listen(port, () => {

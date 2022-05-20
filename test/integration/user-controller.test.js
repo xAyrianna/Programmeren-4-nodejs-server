@@ -5,7 +5,8 @@ const chaiHttp = require("chai-http");
 const server = require("../../index");
 const dbconnection = require("../../database/dbconnection");
 const jwt = require("jsonwebtoken");
-const { jwtSecretKey, logger } = require("../../src/config/config");
+const jwtSecretKey = require("../../src/config/config").jwtSecretKey;
+const logger = require("../../src/config/config").logger;
 
 chai.should();
 chai.use(chaiHttp);
@@ -42,10 +43,25 @@ describe("Manage users", () => {
         connection.query(
           "ALTER TABLE user AUTO_INCREMENT = 1;",
           function (error, results, fields) {
+            if (error) throw error;
+          }
+        );
+        connection.query(
+          "INSERT INTO user (firstName, lastName, emailAdress, password, phoneNumber, street, city) VALUES(?,?,?,?,?,?,?);",
+          ["Davide", "Ambesi", "d.ambesi@avans.nl", "secret", "", "", ""],
+          function (error, results, fields) {
             connection.release;
 
             if (error) throw error;
+          }
+        );
+        connection.query(
+          "INSERT INTO user (firstName, lastName, emailAdress, password, phoneNumber, street, city) VALUES(?,?,?,?,?,?,?);",
+          ["Test", "Tester", "tTester@email.com", "secret", "", "", ""],
+          function (error, results, fields) {
+            connection.release;
 
+            if (error) throw error;
             done();
           }
         );
@@ -121,11 +137,14 @@ describe("Manage users", () => {
         });
     });
   });
+  describe("UC-202 Get list of users /api/user", () => {});
+  describe("UC-203 Get own userprofile /api/user/profile", () => {});
   describe("UC-204 Get userprofile by id /api/user/:id", () => {
     it("When id doesn't exist, a valid error should be returned", (done) => {
       chai
         .request(server)
         .get("/api/user/6")
+        .set("authorization", "Bearer " + jwt.sign({ id: 1 }, jwtSecretKey))
         .end((err, res) => {
           res.should.be.an("object");
           let { status, result } = res.body;
@@ -140,6 +159,7 @@ describe("Manage users", () => {
       chai
         .request(server)
         .get("/api/user/1")
+        .set("authorization", "Bearer " + jwt.sign({ id: 1 }, jwtSecretKey))
         .end((err, res) => {
           res.should.be.an("object");
           let { status, result } = res.body;
@@ -153,6 +173,7 @@ describe("Manage users", () => {
       chai
         .request(server)
         .put("/api/user/1")
+        .set("authorization", "Bearer " + jwt.sign({ id: 1 }, jwtSecretKey))
         .send({
           //firstname is missing
           lastName: "Doe",
@@ -176,6 +197,7 @@ describe("Manage users", () => {
       chai
         .request(server)
         .put("/api/user/6")
+        .set("authorization", "Bearer " + jwt.sign({ id: 1 }, jwtSecretKey))
         .send({
           firstName: "John",
           lastName: "Doe",
@@ -198,7 +220,8 @@ describe("Manage users", () => {
     it("When a user has been updated successfully", (done) => {
       chai
         .request(server)
-        .put("/api/user/1")
+        .put("/api/user/3")
+        .set("authorization", "Bearer " + jwt.sign({ id: 1 }, jwtSecretKey))
         .send({
           firstName: "Test2",
           lastName: "Tester",
@@ -222,6 +245,7 @@ describe("Manage users", () => {
       chai
         .request(server)
         .delete("/api/user/6")
+        .set("authorization", "Bearer " + jwt.sign({ id: 1 }, jwtSecretKey))
         .end((err, res) => {
           res.should.be.an("object");
           let { status, result } = res.body;
@@ -235,14 +259,15 @@ describe("Manage users", () => {
     it("When a user has been deleted successfully", (done) => {
       chai
         .request(server)
-        .delete("/api/user/1")
+        .delete("/api/user/2")
+        .set("authorization", "Bearer " + jwt.sign({ id: 1 }, jwtSecretKey))
         .end((err, res) => {
           res.should.be.an("object");
           let { status, result } = res.body;
           status.should.equal(200);
           result.should.be
             .a("string")
-            .that.equals("User with id: 1 has been deleted.");
+            .that.equals("User with id: 2 has been deleted.");
           done();
         });
     });

@@ -1,20 +1,25 @@
 const assert = require("assert");
 const dbconnection = require("../../database/dbconnection");
 const jwt = require("jsonwebtoken");
-require("dotenv").config();
+const jwtSecretKey = require("../config/config").jwtSecretKey;
+const logger = require("../config/config").logger;
 
 let controller = {
   login: (req, res, next) => {
     //Assert for validation
-    const { emailAdress, password } = req.body;
-    console.log(emailAdress + " " + password);
+    const { emailAdress } = req.body;
+    logger.debug(emailAdress, " ", req.body.password);
 
     const queryString =
       "SELECT id, firstName, lastName, emailAdress, password FROM user WHERE emailAdress = ?";
 
     dbconnection.getConnection(function (err, connection) {
       if (err) {
-        next(err);
+        logger.error("Error getting connection from dbconnection");
+        res.status(500).json({
+          error: err.toString(),
+          datetime: new Date().toISOString,
+        });
       } // not connected!
 
       // Use the connection
@@ -27,53 +32,101 @@ let controller = {
 
           // Handle error after the release.
           if (error) {
-            next(error);
+            logger.error("Error: ", err.toString());
+            res.status(500).json({
+              error: err.toString(),
+              datetime: new Date().toISOString(),
+            });
           }
 
           if (results && results.length === 1) {
             // User found with this emailAddress
             // Check if password's correct
-            console.log(results);
-
-            const user = results[0];
-
-            if (user.password === password) {
+            if (results[0].password === req.body.password) {
               //email and password are correct
+              logger.info(
+                "passwords matched, sending userinfo en valid token."
+              );
+
+              const { password, ...userinfo } = result[0];
+              const payload = {
+                userId: userinfo.id,
+              };
+
               jwt.sign(
-                { userid: user.id },
-                process.env.JWT_SECRET,
+                payload,
+                jwtSecretKey,
                 { expiresIn: "25d" },
                 function (err, token) {
-                  if (err) console.log(err);
                   if (token) {
-                    console.log(token);
+                    logger.info("User logged in, sending: ", userinfo);
                     res.status(200).json({
                       status: 200,
-                      result: token,
+                      results: { ...userinfo, token },
                     });
                   }
                 }
               );
             } else {
-              console.log("Password is not correct");
-              res.status(404).json({
-                status: 404,
-                message: "Password is not correct",
+              logger.info("User not found or password invalid");
+              res.status(401).json({
+                message: "User not found or password invalid",
+                datetime: new Date().toISOString,
               });
             }
-          } else {
-            //User not found
-            console.log("User not found");
-            res.status(404).json({
-              status: 404,
-              message: "email not found",
-            });
           }
         }
       );
     });
   },
-  validate: (req, res, next) => {},
+  validateLogin: (req, res, next) => {
+    //Make sure you have the expected input
+    try {
+      assert(
+        typeof req.body.emailAdress === "string",
+        "email must be a string."
+      );
+      assert(
+        typeof req.body.password === "string",
+        "password must be a string."
+      );
+      next();
+    } catch (ex) {
+      res.status(422).json({
+        error: ex.toString(),
+        datetime: new Date().toISOString(),
+      });
+    }
+  },
+  validateToken: (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      logger.warn("Authorization header is missing!");
+      res.status(401).json({
+        error: "Authorization header missing!",
+        datetime: new Date().toISOString,
+      });
+    } else {
+      const token = authHeader.substring(7, authHeader.length);
+
+      jwt.verify(token, jwtSecretKey, (err, payload) => {
+        if (err) {
+          logger.warn("Not authorized");
+          res.status(401).json({
+            error: "Not authorized",
+            datetime: new Date().toISOString,
+          });
+        }
+        if (payload) {
+          logger.debug("token is valid", payload);
+          //User has acces. Add userId from payload to
+          //request, for every next endpoint
+          req.userId = payload.userId;
+          next();
+        }
+      });
+    }
+  },
 };
 
 module.exports = controller;

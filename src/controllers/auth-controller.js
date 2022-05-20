@@ -48,7 +48,7 @@ let controller = {
                 "passwords matched, sending userinfo en valid token."
               );
 
-              const { password, ...userinfo } = result[0];
+              const { password, ...userinfo } = results[0];
               const payload = {
                 userId: userinfo.id,
               };
@@ -108,10 +108,12 @@ let controller = {
       });
     } else {
       const token = authHeader.substring(7, authHeader.length);
+      logger.debug(token);
 
       jwt.verify(token, jwtSecretKey, (err, payload) => {
+        logger.debug(payload);
         if (err) {
-          logger.warn("Not authorized");
+          logger.warn(err.message);
           res.status(401).json({
             error: "Not authorized",
             datetime: new Date().toISOString,

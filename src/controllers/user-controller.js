@@ -1,5 +1,6 @@
 const assert = require("assert");
 const dbconnection = require("../../database/dbconnection");
+const logger = require("../config/config").logger;
 
 let controller = {
   validateUser: (req, res, next) => {
@@ -46,7 +47,7 @@ let controller = {
           // Handle error after the release.
 
           if (error) {
-            console.log(error.sqlMessage);
+            logger.info(error.sqlMessage);
             res.status(409).json({
               status: 409,
               result: `User with emailaddress: ${user.emailAdress} already exists.`,
@@ -63,7 +64,7 @@ let controller = {
   },
   getAllUsers: (req, res, next) => {
     const { firstName, isActive } = req.query;
-    console.log(`name = ${firstName} isActive = ${isActive}`);
+    logger.debug(`name = ${firstName} isActive = ${isActive}`);
 
     let queryString = "SELECT * FROM `user`";
 
@@ -79,7 +80,7 @@ let controller = {
         queryString += `isActive='${isActive}'`;
       }
     }
-    console.log(queryString);
+    logger.debug(queryString);
 
     dbconnection.getConnection(function (err, connection) {
       if (err) {
@@ -97,7 +98,7 @@ let controller = {
         }
 
         // Don't use the connection here, it has been returned to the dbconnection.
-        console.log("#results =", results.length);
+        logger.debug("#results =", results.length);
         res.status(200).json({
           status: 200,
           result: results,
@@ -128,7 +129,7 @@ let controller = {
           if (error) throw error;
 
           // Don't use the connection here, it has been returned to the dbconnection.
-          console.log("#results =", results.length);
+          logger.debug("#results =", results.length);
           if (results.length > 0) {
             res.status(200).json({
               status: 200,
@@ -147,7 +148,7 @@ let controller = {
   updateUserById: (req, res) => {
     const id = req.params.userId;
     const updateUser = req.body;
-    console.log(`User with ID ${id} requested to be updated`);
+    logger.debug(`User with ID ${id} requested to be updated`);
     dbconnection.getConnection(function (err, connection) {
       if (err) throw err;
       connection.query(
@@ -165,7 +166,7 @@ let controller = {
         ],
         function (error, results, fields) {
           if (error) {
-            console.log(error.sqlMessage);
+            logger.info(error.sqlMessage);
             res.status(401).json({
               status: 401,
               result: `Updating user not possible, email is already taken.`,

@@ -31,6 +31,7 @@
     "jsonwebtoken": "^8.5.1",
     "mysql": "^2.18.1",
     "mysql-client": "^0.3.0",
-    "mysql2": "^2.3.3"
+    "mysql2": "^2.3.3",
+    "tracer": "^1.1.5"
   }
 }

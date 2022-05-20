@@ -11,12 +11,7 @@ router.get("/", (req, res) => {
 });
 
 //UC-201
-router.post(
-  "/user",
-  authController.validateToken,
-  userController.validateUser,
-  userController.addUser
-);
+router.post("/user", userController.validateUser, userController.addUser);
 
 //UC-202
 router.get("/user", authController.validateToken, userController.getAllUsers);
@@ -38,11 +33,16 @@ router.get(
 //UC-205
 router.put(
   "/user/:userId",
+  authController.validateToken,
   userController.validateUser,
   userController.updateUserById
 );
 
 //UC-206
-router.delete("/user/:userId", userController.deleteUserById);
+router.delete(
+  "/user/:userId",
+  authController.validateToken,
+  userController.deleteUserById
+);
 
 module.exports = router;

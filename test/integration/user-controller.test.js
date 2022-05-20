@@ -4,6 +4,8 @@ const chai = require("chai");
 const chaiHttp = require("chai-http");
 const server = require("../../index");
 const dbconnection = require("../../database/dbconnection");
+const jwt = require("jsonwebtoken");
+const { jwtSecretKey, logger } = require("../../src/config/config");
 
 chai.should();
 chai.use(chaiHttp);

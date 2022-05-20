@@ -11,16 +11,29 @@ router.get("/", (req, res) => {
 });
 
 //UC-201
-router.post("/user", userController.validateUser, userController.addUser);
+router.post(
+  "/user",
+  authController.validateToken,
+  userController.validateUser,
+  userController.addUser
+);
 
 //UC-202
-router.get("/user", userController.getAllUsers);
+router.get("/user", authController.validateToken, userController.getAllUsers);
 
 //UC-203
-router.get("/user/profile", userController.getUserProfile);
+router.get(
+  "/user/profile",
+  authController.validateToken,
+  userController.getUserProfile
+);
 
 //UC-204
-router.get("/user/:userId", userController.getUserById);
+router.get(
+  "/user/:userId",
+  authController.validateToken,
+  userController.getUserById
+);
 
 //UC-205
 router.put(

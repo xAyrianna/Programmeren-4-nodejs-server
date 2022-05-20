@@ -15,8 +15,8 @@ app.all("*", (req, res, next) => {
 });
 
 //Alle routes beginnen met /api
-app.use("/api", userRoutes);
 app.use("/api", authRoutes);
+app.use("/api", userRoutes);
 
 app.all("*", (req, res) => {
   res.status(404).json({

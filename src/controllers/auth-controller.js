@@ -104,6 +104,7 @@ let controller = {
     if (!authHeader) {
       logger.warn("Authorization header is missing!");
       res.status(401).json({
+        status: 401,
         error: "Authorization header missing!",
         datetime: new Date().toISOString,
       });

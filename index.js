@@ -2,6 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const userRoutes = require("./src/routes/user-routes");
 const authRoutes = require("./src/routes/auth-routes");
+const mealRoutes = require("./src/routes/meal-routes");
 const logger = require("./src/config/config").logger;
 require("dotenv").config();
 
@@ -18,6 +19,7 @@ app.all("*", (req, res, next) => {
 //Alle routes beginnen met /api
 app.use("/api", authRoutes);
 app.use("/api", userRoutes);
+app.use("/api", mealRoutes);
 
 app.all("*", (req, res) => {
   res.status(404).json({
@@ -32,7 +34,7 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(port, () => {
-  logger.debug(`Example app listening on port ${port}`);
+  logger.info(`Example app listening on port ${port}`);
 });
 
 module.exports = app;

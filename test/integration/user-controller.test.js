@@ -82,9 +82,9 @@ describe("Manage users", () => {
         })
         .end((err, res) => {
           res.should.be.an("object");
-          let { status, result } = res.body;
+          let { status, message } = res.body;
           status.should.equal(201);
-          result.should.be.a("string").that.equals("User has been added");
+          message.should.be.a("string").that.equals("User has been added");
           done();
         });
     });
@@ -103,9 +103,9 @@ describe("Manage users", () => {
         })
         .end((err, res) => {
           res.should.be.an("object");
-          let { status, result } = res.body;
+          let { status, message } = res.body;
           status.should.equal(400);
-          result.should.be
+          message.should.be
             .a("string")
             .that.equals("Firstname must be a string");
           done();
@@ -126,9 +126,9 @@ describe("Manage users", () => {
         })
         .end((err, res) => {
           res.should.be.an("object");
-          let { status, result } = res.body;
+          let { status, message } = res.body;
           status.should.equal(409);
-          result.should.be
+          message.should.be
             .a("string")
             .that.equals(
               "User with emailaddress: tTester2@email.com already exists."
@@ -144,12 +144,12 @@ describe("Manage users", () => {
       chai
         .request(server)
         .get("/api/user/6")
-        .set("authorization", "Bearer " + jwt.sign({ id: 1 }, jwtSecretKey))
+        .set("authorization", "Bearer " + jwt.sign({ userid: 1 }, jwtSecretKey))
         .end((err, res) => {
           res.should.be.an("object");
-          let { status, result } = res.body;
+          let { status, message } = res.body;
           status.should.equal(404);
-          result.should.be
+          message.should.be
             .a("string")
             .that.equals("Could not find user with id: 6");
           done();
@@ -159,10 +159,10 @@ describe("Manage users", () => {
       chai
         .request(server)
         .get("/api/user/1")
-        .set("authorization", "Bearer " + jwt.sign({ id: 1 }, jwtSecretKey))
+        .set("authorization", "Bearer " + jwt.sign({ userid: 1 }, jwtSecretKey))
         .end((err, res) => {
           res.should.be.an("object");
-          let { status, result } = res.body;
+          let { status, message } = res.body;
           status.should.equal(200);
           done();
         });
@@ -173,7 +173,7 @@ describe("Manage users", () => {
       chai
         .request(server)
         .put("/api/user/1")
-        .set("authorization", "Bearer " + jwt.sign({ id: 1 }, jwtSecretKey))
+        .set("authorization", "Bearer " + jwt.sign({ userid: 1 }, jwtSecretKey))
         .send({
           //firstname is missing
           lastName: "Doe",
@@ -185,9 +185,9 @@ describe("Manage users", () => {
         })
         .end((err, res) => {
           res.should.be.an("object");
-          let { status, result } = res.body;
+          let { status, message } = res.body;
           status.should.equal(400);
-          result.should.be
+          message.should.be
             .a("string")
             .that.equals("Firstname must be a string");
           done();
@@ -197,7 +197,7 @@ describe("Manage users", () => {
       chai
         .request(server)
         .put("/api/user/6")
-        .set("authorization", "Bearer " + jwt.sign({ id: 1 }, jwtSecretKey))
+        .set("authorization", "Bearer " + jwt.sign({ userid: 6 }, jwtSecretKey))
         .send({
           firstName: "John",
           lastName: "Doe",
@@ -209,9 +209,9 @@ describe("Manage users", () => {
         })
         .end((err, res) => {
           res.should.be.an("object");
-          let { status, result } = res.body;
+          let { status, message } = res.body;
           status.should.equal(400);
-          result.should.be
+          message.should.be
             .a("string")
             .that.equals("Could not find user with id: 6");
           done();
@@ -221,7 +221,7 @@ describe("Manage users", () => {
       chai
         .request(server)
         .put("/api/user/3")
-        .set("authorization", "Bearer " + jwt.sign({ id: 1 }, jwtSecretKey))
+        .set("authorization", "Bearer " + jwt.sign({ userid: 3 }, jwtSecretKey))
         .send({
           firstName: "Test2",
           lastName: "Tester",
@@ -234,7 +234,7 @@ describe("Manage users", () => {
         })
         .end((err, res) => {
           res.should.be.an("object");
-          let { status, result } = res.body;
+          let { status, message } = res.body;
           status.should.equal(200);
           done();
         });
@@ -245,12 +245,12 @@ describe("Manage users", () => {
       chai
         .request(server)
         .delete("/api/user/6")
-        .set("authorization", "Bearer " + jwt.sign({ id: 1 }, jwtSecretKey))
+        .set("authorization", "Bearer " + jwt.sign({ userid: 6 }, jwtSecretKey))
         .end((err, res) => {
           res.should.be.an("object");
-          let { status, result } = res.body;
+          let { status, message } = res.body;
           status.should.equal(400);
-          result.should.be
+          message.should.be
             .a("string")
             .that.equals("Could not find user with id: 6");
           done();
@@ -260,12 +260,12 @@ describe("Manage users", () => {
       chai
         .request(server)
         .delete("/api/user/2")
-        .set("authorization", "Bearer " + jwt.sign({ id: 1 }, jwtSecretKey))
+        .set("authorization", "Bearer " + jwt.sign({ userid: 2 }, jwtSecretKey))
         .end((err, res) => {
           res.should.be.an("object");
-          let { status, result } = res.body;
+          let { status, message } = res.body;
           status.should.equal(200);
-          result.should.be
+          message.should.be
             .a("string")
             .that.equals("User with id: 2 has been deleted.");
           done();
@@ -273,3 +273,5 @@ describe("Manage users", () => {
     });
   });
 });
+describe("Manage authentication", () => {});
+describe("Manage meals", () => {});

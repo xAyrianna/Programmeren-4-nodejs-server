@@ -59,14 +59,11 @@ let controller = {
         [
           meal.name,
           meal.description,
-<<<<<<< HEAD
           deliveryDate,
-=======
           meal.isVega,
           meal.isVegan,
           meal.isToTakeHome,
           meal.dateTime,
->>>>>>> refact-controllers
           meal.imageUrl,
           meal.allergenes,
           meal.maxAmountOfParticipants,

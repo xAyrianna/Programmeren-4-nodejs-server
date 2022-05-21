@@ -46,6 +46,7 @@ let controller = {
             next(error);
           }
           res.status(201).json({
+            status: 201,
             message: "Meal has been succesfully added",
           });
         }
@@ -66,6 +67,7 @@ let controller = {
             next(error);
           }
           res.status(200).json({
+            status: 200,
             result: results,
           });
         }
@@ -91,10 +93,12 @@ let controller = {
           }
           if (results.length > 0) {
             res.status(200).json({
+              status: 200,
               result: results,
             });
           } else {
             res.status(404).json({
+              status: 404,
               message: `Could not find meal with id: ${mealId}.`,
             });
           }

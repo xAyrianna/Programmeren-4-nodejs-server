@@ -172,7 +172,7 @@ let controller = {
   },
   updateUserById: (req, res) => {
     const id = req.params.userId;
-    const updateUser = req.body;
+    const updatedUser = req.body;
     logger.debug(`User with ID ${id} requested to be updated`);
 
     if (id != req.userId) {
@@ -189,14 +189,14 @@ let controller = {
         connection.query(
           "UPDATE user SET firstName=?, lastName=?, isActive=?, emailAdress=?, password=?, phoneNumber=?, street=?, city=? WHERE id = ?;",
           [
-            updateUser.firstName,
-            updateUser.lastName,
-            updateUser.isActive,
-            updateUser.emailAdress,
-            updateUser.password,
-            updateUser.phoneNumber,
-            updateUser.street,
-            updateUser.city,
+            updatedUser.firstName,
+            updatedUser.lastName,
+            updatedUser.isActive,
+            updatedUser.emailAdress,
+            updatedUser.password,
+            updatedUser.phoneNumber,
+            updatedUser.street,
+            updatedUser.city,
             id,
           ],
           function (error, results, fields) {
@@ -250,7 +250,8 @@ let controller = {
 
         // Use the connection
         connection.query(
-          "DELETE FROM user WHERE id = " + id + ";",
+          "DELETE FROM user WHERE id = ?;",
+          [id],
           function (error, results, fields) {
             // When done with the connection, release it.
             connection.release();

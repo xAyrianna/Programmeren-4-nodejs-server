@@ -49,10 +49,12 @@ let controller = {
           if (error) {
             logger.debug(error.sqlMessage);
             res.status(409).json({
+              status: 409,
               message: `User with emailaddress: ${user.emailAdress} already exists.`,
             });
           } else {
             res.status(201).json({
+              status: 201,
               message: "User has been added",
             });
           }
@@ -98,14 +100,40 @@ let controller = {
         // Don't use the connection here, it has been returned to the dbconnection.
         logger.debug("#results =", results.length);
         res.status(200).json({
+          status: 200,
           result: results,
         });
       });
     });
   },
   getUserProfile: (req, res) => {
-    res.status(404).json({
-      message: "This endpoint hasn't been defined yet.",
+    const id = req.userId;
+
+    dbconnection.getConnection(function (err, connection) {
+      if (err) throw err;
+
+      connection.query(
+        "SELECT * FROM user WHERE id = ?",
+        [id],
+        function (error, results, fields) {
+          connection.release();
+
+          if (error) throw error;
+
+          logger.debug("#results =", results.length);
+          if (results.length > 0) {
+            res.status(200).json({
+              status: 200,
+              result: results,
+            });
+          } else {
+            res.status(404).json({
+              status: 404,
+              message: `Could not find user with id: ${id}`,
+            });
+          }
+        }
+      );
     });
   },
   getUserById: (req, res) => {
@@ -129,10 +157,12 @@ let controller = {
           logger.debug("#results =", results.length);
           if (results.length > 0) {
             res.status(200).json({
+              status: 200,
               result: results,
             });
           } else {
             res.status(404).json({
+              status: 404,
               message: `Could not find user with id: ${id}`,
             });
           }
@@ -144,78 +174,106 @@ let controller = {
     const id = req.params.userId;
     const updateUser = req.body;
     logger.debug(`User with ID ${id} requested to be updated`);
-    dbconnection.getConnection(function (err, connection) {
-      if (err) throw err;
-      connection.query(
-        "UPDATE user SET firstName=?, lastName=?, isActive=?, emailAdress=?, password=?, phoneNumber=?, street=?, city=? WHERE id = ?;",
-        [
-          updateUser.firstName,
-          updateUser.lastName,
-          updateUser.isActive,
-          updateUser.emailAdress,
-          updateUser.password,
-          updateUser.phoneNumber,
-          updateUser.street,
-          updateUser.city,
-          id,
-        ],
-        function (error, results, fields) {
-          if (error) {
-            logger.info(error.sqlMessage);
-            res.status(401).json({
-              message: `Updating user not possible, email is already taken.`,
-            });
-            return;
-          }
-          if (results.affectedRows > 0) {
-            connection.query(
-              "SELECT * FROM user WHERE id = ?;",
-              [id],
-              function (error, results, fields) {
-                res.status(200).json({
-                  result: results[0],
-                });
-              }
-            );
-          } else {
-            res.status(400).json({
-              message: `Could not find user with id: ${id}`,
-            });
-          }
-        }
+
+    if (id != req.userId) {
+      logger.debug(
+        `Id's are not the same; requested: ${id} and logged-in user: ${req.userId}`
       );
-      connection.release();
-    });
+      res.status(403).json({
+        status: 403,
+        message: "You can only change your own data",
+      });
+    } else {
+      dbconnection.getConnection(function (err, connection) {
+        if (err) throw err;
+        connection.query(
+          "UPDATE user SET firstName=?, lastName=?, isActive=?, emailAdress=?, password=?, phoneNumber=?, street=?, city=? WHERE id = ?;",
+          [
+            updateUser.firstName,
+            updateUser.lastName,
+            updateUser.isActive,
+            updateUser.emailAdress,
+            updateUser.password,
+            updateUser.phoneNumber,
+            updateUser.street,
+            updateUser.city,
+            id,
+          ],
+          function (error, results, fields) {
+            if (error) {
+              logger.info(error.sqlMessage);
+              res.status(401).json({
+                status: 401,
+                message: `Updating user not possible, email is already taken.`,
+              });
+              return;
+            }
+            if (results.affectedRows > 0) {
+              connection.query(
+                "SELECT * FROM user WHERE id = ?;",
+                [id],
+                function (error, results, fields) {
+                  connection.release();
+                  logger.debug("User updated succesfully");
+
+                  res.status(200).json({
+                    status: 200,
+                    result: results[0],
+                  });
+                }
+              );
+            } else {
+              res.status(400).json({
+                status: 400,
+                message: `Could not find user with id: ${id}`,
+              });
+            }
+          }
+        );
+      });
+    }
   },
   deleteUserById: (req, res) => {
     let id = req.params.userId;
 
-    dbconnection.getConnection(function (err, connection) {
-      if (err) throw err; // not connected!
-
-      // Use the connection
-      connection.query(
-        "DELETE FROM user WHERE id = " + id + ";",
-        function (error, results, fields) {
-          // When done with the connection, release it.
-          connection.release();
-
-          // Handle error after the release.
-          if (error) throw error;
-
-          // Don't use the connection here, it has been returned to the dbconnection.
-          if (results.affectedRows > 0) {
-            res.status(200).json({
-              message: `User with id: ${id} has been deleted.`,
-            });
-          } else {
-            res.status(400).json({
-              message: `Could not find user with id: ${id}`,
-            });
-          }
-        }
+    if (id != req.userId) {
+      logger.debug(
+        `Id's are not the same; requested: ${id} and logged-in user: ${req.userId}`
       );
-    });
+      res.status(403).json({
+        status: 403,
+        message: "You can only delete your own profile",
+      });
+    } else {
+      dbconnection.getConnection(function (err, connection) {
+        if (err) throw err; // not connected!
+
+        // Use the connection
+        connection.query(
+          "DELETE FROM user WHERE id = " + id + ";",
+          function (error, results, fields) {
+            // When done with the connection, release it.
+            connection.release();
+
+            // Handle error after the release.
+            if (error) throw error;
+
+            // Don't use the connection here, it has been returned to the dbconnection.
+            if (results.affectedRows > 0) {
+              res.status(200).json({
+                status: 200,
+                message: `User with id: ${id} has been deleted.`,
+              });
+            } else {
+              res.status(400).json({
+                status: 400,
+                message: `Could not find user with id: ${id}`,
+              });
+            }
+          }
+        );
+      });
+    }
   },
 };
 

@@ -70,6 +70,7 @@ let controller = {
             } else {
               logger.info("User not found or password invalid");
               res.status(401).json({
+                status: 401,
                 message: "User not found or password invalid",
                 datetime: new Date().toISOString,
               });
@@ -115,6 +116,7 @@ let controller = {
         if (err) {
           logger.warn(err.message);
           res.status(401).json({
+            status: 401,
             error: "Not authorized",
             datetime: new Date().toISOString,
           });
@@ -123,7 +125,8 @@ let controller = {
           logger.debug("token is valid", payload);
           //User has acces. Add userId from payload to
           //request, for every next endpoint
-          req.userId = payload.userId;
+          logger.debug(payload.userid);
+          req.userId = payload.userid;
           next();
         }
       });

@@ -16,7 +16,7 @@ let controller = {
     } catch (err) {
       const error = {
         status: 400,
-        result: err.message,
+        message: err.message,
       };
 
       next(error);
@@ -47,15 +47,13 @@ let controller = {
           // Handle error after the release.
 
           if (error) {
-            logger.info(error.sqlMessage);
+            logger.debug(error.sqlMessage);
             res.status(409).json({
-              status: 409,
-              result: `User with emailaddress: ${user.emailAdress} already exists.`,
+              message: `User with emailaddress: ${user.emailAdress} already exists.`,
             });
           } else {
             res.status(201).json({
-              status: 201,
-              result: "User has been added",
+              message: "User has been added",
             });
           }
         }
@@ -100,7 +98,6 @@ let controller = {
         // Don't use the connection here, it has been returned to the dbconnection.
         logger.debug("#results =", results.length);
         res.status(200).json({
-          status: 200,
           result: results,
         });
       });
@@ -108,8 +105,7 @@ let controller = {
   },
   getUserProfile: (req, res) => {
     res.status(404).json({
-      status: 404,
-      result: "This endpoint hasn't been defined yet.",
+      message: "This endpoint hasn't been defined yet.",
     });
   },
   getUserById: (req, res) => {
@@ -120,7 +116,8 @@ let controller = {
 
       // Use the connection
       connection.query(
-        "SELECT * FROM user WHERE id = " + id + ";",
+        "SELECT * FROM user WHERE id = ?;",
+        [id],
         function (error, results, fields) {
           // When done with the connection, release it.
           connection.release();
@@ -132,13 +129,11 @@ let controller = {
           logger.debug("#results =", results.length);
           if (results.length > 0) {
             res.status(200).json({
-              status: 200,
               result: results,
             });
           } else {
             res.status(404).json({
-              status: 404,
-              result: `Could not find user with id: ${id}`,
+              message: `Could not find user with id: ${id}`,
             });
           }
         }
@@ -168,8 +163,7 @@ let controller = {
           if (error) {
             logger.info(error.sqlMessage);
             res.status(401).json({
-              status: 401,
-              result: `Updating user not possible, email is already taken.`,
+              message: `Updating user not possible, email is already taken.`,
             });
             return;
           }
@@ -179,15 +173,13 @@ let controller = {
               [id],
               function (error, results, fields) {
                 res.status(200).json({
-                  status: 200,
                   result: results[0],
                 });
               }
             );
           } else {
             res.status(400).json({
-              status: 400,
-              result: `Could not find user with id: ${id}`,
+              message: `Could not find user with id: ${id}`,
             });
           }
         }
@@ -214,13 +206,11 @@ let controller = {
           // Don't use the connection here, it has been returned to the dbconnection.
           if (results.affectedRows > 0) {
             res.status(200).json({
-              status: 200,
-              result: `User with id: ${id} has been deleted.`,
+              message: `User with id: ${id} has been deleted.`,
             });
           } else {
             res.status(400).json({
-              status: 400,
-              result: `Could not find user with id: ${id}`,
+              message: `Could not find user with id: ${id}`,
             });
           }
         }

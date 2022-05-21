@@ -26,11 +26,13 @@ let controller = {
     let meal = req.body;
     let deliveryDate = new Date(meal.dateTime)
       .toISOString()
-      .slice(0, 19)
-      .replace("T", " ");
+      .replace("T", " ")
+      .slice(0, 19);
 
     dbconnection.getConnection(function (err, connection) {
       if (err) throw err;
+
+      logger.debug("deliverydate: ", deliveryDate);
 
       connection.query(
         "INSERT INTO meal (name, description, dateTime, imageUrl, price, cookId) VALUES (?,?,?,?,?,?);",
@@ -47,7 +49,11 @@ let controller = {
 
           if (error) {
             logger.debug(error.sqlMessage);
-            next(error);
+            logger.debug(error);
+            res.status(400).json({
+              status: 400,
+              message: "something went wrong " + error,
+            });
           }
           res.status(201).json({
             status: 201,
@@ -110,7 +116,9 @@ let controller = {
       );
     });
   },
-  updateMealById: (req, res) => {},
+  updateMealById: (req, res) => {
+    const mealId = req.params.mealId;
+  },
   deleteMealById: (req, res) => {},
 };
 

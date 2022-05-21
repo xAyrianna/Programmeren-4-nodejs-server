@@ -62,19 +62,26 @@ let controller = {
                     logger.info("User logged in, sending: ", userinfo);
                     res.status(200).json({
                       status: 200,
-                      results: { ...userinfo, token },
+                      result: { ...userinfo, token },
                     });
                   }
                 }
               );
             } else {
-              logger.info("User not found or password invalid");
+              logger.info("Password invalid");
               res.status(401).json({
                 status: 401,
-                message: "User not found or password invalid",
+                message: "password invalid",
                 datetime: new Date().toISOString,
               });
             }
+          } else {
+            logger.info("User not found");
+            res.status(404).json({
+              status: 404,
+              message: `User with email ${emailAdress} not found.`,
+              datetime: new Date().toISOString,
+            });
           }
         }
       );
@@ -82,6 +89,7 @@ let controller = {
   },
   validateLogin: (req, res, next) => {
     //Make sure you have the expected input
+    logger.debug("validate login called");
     try {
       assert(
         typeof req.body.emailAdress === "string",
@@ -91,12 +99,14 @@ let controller = {
         typeof req.body.password === "string",
         "password must be a string."
       );
+      logger.debug("Both email and password are strings");
       next();
-    } catch (ex) {
-      res.status(422).json({
-        error: ex.toString(),
-        datetime: new Date().toISOString(),
-      });
+    } catch (err) {
+      const error = {
+        status: 400,
+        message: err.message,
+      };
+      next(error);
     }
   },
   validateToken: (req, res, next) => {
@@ -105,7 +115,7 @@ let controller = {
       logger.warn("Authorization header is missing!");
       res.status(401).json({
         status: 401,
-        error: "Authorization header missing!",
+        error: "Authorization header is missing!",
         datetime: new Date().toISOString,
       });
     } else {
@@ -118,7 +128,7 @@ let controller = {
           logger.warn(err.message);
           res.status(401).json({
             status: 401,
-            error: "Not authorized",
+            message: "Not authorized",
             datetime: new Date().toISOString,
           });
         }

@@ -12,61 +12,55 @@ chai.should();
 chai.use(chaiHttp);
 
 describe("Manage users", () => {
-  describe("UC-201 Register /api/user", () => {
-    before((done) => {
-      dbconnection.getConnection(function (err, connection) {
-        if (err) throw err; // not connected!
+  before((done) => {
+    dbconnection.getConnection(function (err, connection) {
+      if (err) throw err; // not connected!
 
-        // Use the connection
-        connection.query(
-          "DELETE FROM meal;",
-          function (error, results, fields) {
-            // When done with the connection, release it.
+      // Use the connection
+      connection.query("DELETE FROM meal;", function (error, results, fields) {
+        // When done with the connection, release it.
 
-            // Handle error after the release.
-            if (error) throw error;
-            // Let op dat je done() pas aanroept als de query callback eindigt!
-          }
-        );
-        connection.query(
-          "DELETE FROM meal_participants_user;",
-          function (error, results, fields) {
-            if (error) throw error;
-          }
-        );
-        connection.query(
-          "DELETE FROM user;",
-          function (error, results, fields) {
-            if (error) throw error;
-          }
-        );
-        connection.query(
-          "ALTER TABLE user AUTO_INCREMENT = 1;",
-          function (error, results, fields) {
-            if (error) throw error;
-          }
-        );
-        connection.query(
-          "INSERT INTO user (firstName, lastName, emailAdress, password, phoneNumber, street, city) VALUES(?,?,?,?,?,?,?);",
-          ["Davide", "Ambesi", "d.ambesi@avans.nl", "secret", "", "", ""],
-          function (error, results, fields) {
-            connection.release;
-
-            if (error) throw error;
-          }
-        );
-        connection.query(
-          "INSERT INTO user (firstName, lastName, emailAdress, password, phoneNumber, street, city) VALUES(?,?,?,?,?,?,?);",
-          ["Test", "Tester", "tTester@email.com", "secret", "", "", ""],
-          function (error, results, fields) {
-            connection.release;
-
-            if (error) throw error;
-            done();
-          }
-        );
+        // Handle error after the release.
+        if (error) throw error;
+        // Let op dat je done() pas aanroept als de query callback eindigt!
       });
+      connection.query(
+        "DELETE FROM meal_participants_user;",
+        function (error, results, fields) {
+          if (error) throw error;
+        }
+      );
+      connection.query("DELETE FROM user;", function (error, results, fields) {
+        if (error) throw error;
+      });
+      connection.query(
+        "ALTER TABLE user AUTO_INCREMENT = 1;",
+        function (error, results, fields) {
+          if (error) throw error;
+        }
+      );
+      connection.query(
+        "INSERT INTO user (firstName, lastName, emailAdress, password, phoneNumber, street, city) VALUES(?,?,?,?,?,?,?);",
+        ["Davide", "Ambesi", "d.ambesi@avans.nl", "secret", "", "", ""],
+        function (error, results, fields) {
+          connection.release;
+
+          if (error) throw error;
+        }
+      );
+      connection.query(
+        "INSERT INTO user (firstName, lastName, emailAdress, password, phoneNumber, street, city) VALUES(?,?,?,?,?,?,?);",
+        ["Test", "Tester", "tTester@email.com", "secret", "", "", ""],
+        function (error, results, fields) {
+          connection.release;
+
+          if (error) throw error;
+          done();
+        }
+      );
     });
+  });
+  describe("UC-201 Register /api/user", () => {
     it("User has been successfully added", (done) => {
       chai
         .request(server)
@@ -273,5 +267,59 @@ describe("Manage users", () => {
     });
   });
 });
-describe("Manage authentication", () => {});
+describe("Manage authentication", () => {
+  describe("UC-101 Login /api/auth/login", () => {
+    it("When a required input is missing, a valid error should be returned", (done) => {
+      chai
+        .request(server)
+        .post("/api/auth/login")
+        .send({
+          emailAdress: "emailadress@email.com",
+        })
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(400),
+            message.should.be
+              .a("string")
+              .that.equals("password must be a string.");
+          done();
+        });
+    });
+    it.skip("When an invalid emailAddress has been given, a valid error should be returned", (done) => {});
+    it.skip("When an invalid password has been given, a valid error should be returned", (done) => {});
+    it("When user does not exist a valid error should be returned", (done) => {
+      chai
+        .request(server)
+        .post("/api/auth/login")
+        .send({
+          emailAdress: "lalaa",
+          password: "secret",
+        })
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(404),
+            message.should.be
+              .a("string")
+              .that.equals("User with email lalaa not found.");
+          done();
+        });
+    });
+    it("When a user has successfully logged in", (done) => {
+      chai
+        .request(server)
+        .post("/api/auth/login")
+        .send({
+          emailAdress: "tTester2@email.com",
+          password: "hidden",
+        })
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status } = res.body;
+          status.should.equal(200), done();
+        });
+    });
+  });
+});
 describe("Manage meals", () => {});

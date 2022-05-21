@@ -273,3 +273,5 @@ describe("Manage users", () => {
     });
   });
 });
+describe("Manage authentication", () => {});
+describe("Manage meals", () => {});

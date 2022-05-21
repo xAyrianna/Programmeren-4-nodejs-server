@@ -55,12 +55,21 @@ let controller = {
       logger.debug("deliverydate: ", deliveryDate);
 
       connection.query(
-        "INSERT INTO meal (name, description, dateTime, imageUrl, price, cookId) VALUES (?,?,?,?,?,?);",
+        "INSERT INTO meal (name, description, isVega, isVegan,isToTakeHome, dateTime, imageUrl, allergenes, maxAmountOfParticipants, price, cookId) VALUES (?,?,?,?,?,?,?,?,?,?,?);",
         [
           meal.name,
           meal.description,
+<<<<<<< HEAD
           deliveryDate,
+=======
+          meal.isVega,
+          meal.isVegan,
+          meal.isToTakeHome,
+          meal.dateTime,
+>>>>>>> refact-controllers
           meal.imageUrl,
+          meal.allergenes,
+          meal.maxAmountOfParticipants,
           meal.price,
           req.userId,
         ],

@@ -29,12 +29,17 @@ let controller = {
       if (err) throw err;
 
       connection.query(
-        "INSERT INTO meal (name, description, dateTime, imageUrl, price, cookId) VALUES (?,?,?,?,?,?);",
+        "INSERT INTO meal (name, description, isVega, isVegan,isToTakeHome, dateTime, imageUrl, allergenes, maxAmountOfParticipants, price, cookId) VALUES (?,?,?,?,?,?,?,?,?,?,?);",
         [
           meal.name,
           meal.description,
+          meal.isVega,
+          meal.isVegan,
+          meal.isToTakeHome,
           meal.dateTime,
           meal.imageUrl,
+          meal.allergenes,
+          meal.maxAmountOfParticipants,
           meal.price,
           req.userId,
         ],

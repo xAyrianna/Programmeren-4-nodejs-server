@@ -5,14 +5,28 @@ const logger = require("../config/config").logger;
 let controller = {
   validateMeal: (req, res, next) => {
     let meal = req.body;
-    let { name, description, dateTime, imageUrl, price } = meal;
 
     try {
-      assert(typeof name === "string", "Name must be a string.");
-      assert(typeof description === "string", "Description must be a string.");
-      assert(typeof dateTime === "string", "DateTime must be a string.");
-      assert(typeof imageUrl === "string", "Imageurl must be a string.");
-      assert(typeof price === "string", "Price must be a number.");
+      assert(typeof meal.name === "string", "Name must be a string.");
+      assert(
+        typeof meal.description === "string",
+        "Description must be a string."
+      );
+      assert(typeof meal.dateTime === "string", "DateTime must be a string.");
+      assert(typeof meal.imageUrl === "string", "Imageurl must be a string.");
+      assert(typeof meal.price === "string", "Price must be a number.");
+      assert(typeof meal.isActive === "number", "isActive must be a number");
+      assert(typeof meal.isVega === "number", "isVega must be a number");
+      assert(typeof meal.isVegan === "number", "isVegan must be a number");
+      assert(
+        typeof meal.isToTakeHome === "number",
+        "isToTakeHome must be a number"
+      );
+      assert(
+        typeof meal.maxAmountOfParticipants === "number",
+        "max amount of participants must be a number"
+      );
+
       next();
     } catch (err) {
       const error = {
@@ -49,45 +63,57 @@ let controller = {
       .replace("T", " ")
       .slice(0, 19);
 
-    dbconnection.getConnection(function (err, connection) {
-      if (err) throw err;
+    if (
+      meal.allergenes === "gluten" ||
+      meal.allergenes === "lactose" ||
+      meal.allergenes === "noten" ||
+      meal.allergenes === ""
+    ) {
+      dbconnection.getConnection(function (err, connection) {
+        if (err) throw err;
 
-      logger.debug("deliverydate: ", deliveryDate);
+        logger.debug("deliverydate: ", deliveryDate);
 
-      connection.query(
-        "INSERT INTO meal (name, description, isVega, isVegan,isToTakeHome, dateTime, imageUrl, allergenes, maxAmountOfParticipants, price, cookId) VALUES (?,?,?,?,?,?,?,?,?,?,?);",
-        [
-          meal.name,
-          meal.description,
-          deliveryDate,
-          meal.isVega,
-          meal.isVegan,
-          meal.isToTakeHome,
-          meal.dateTime,
-          meal.imageUrl,
-          meal.allergenes,
-          meal.maxAmountOfParticipants,
-          meal.price,
-          req.userId,
-        ],
-        function (error, results, fields) {
-          connection.release();
+        connection.query(
+          "INSERT INTO meal (name, description, isActive, isVega, isVegan,isToTakeHome, dateTime, imageUrl, allergenes, maxAmountOfParticipants, price, cookId) VALUES (?,?,?,?,?,?,?,?,?,?,?,?);",
+          [
+            meal.name,
+            meal.description,
+            meal.isActive,
+            meal.isVega,
+            meal.isVegan,
+            meal.isToTakeHome,
+            meal.dateTime,
+            meal.imageUrl,
+            meal.allergenes,
+            meal.maxAmountOfParticipants,
+            meal.price,
+            req.userId,
+          ],
+          function (error, results, fields) {
+            connection.release();
 
-          if (error) {
-            logger.debug(error.sqlMessage);
-            logger.debug(error);
-            res.status(400).json({
-              status: 400,
-              message: "something went wrong " + error,
+            if (error) {
+              logger.debug(error.sqlMessage);
+              logger.debug(error);
+              res.status(400).json({
+                status: 400,
+                message: "something went wrong " + error,
+              });
+            }
+            res.status(201).json({
+              status: 201,
+              message: "Meal has been succesfully added",
             });
           }
-          res.status(201).json({
-            status: 201,
-            message: "Meal has been succesfully added",
-          });
-        }
-      );
-    });
+        );
+      });
+    } else {
+      res.status(400).json({
+        message:
+          "make sure allergenes is empty or has one of the three options",
+      });
+    }
   },
   getAllMeals: (req, res) => {
     dbconnection.getConnection(function (err, connection) {
@@ -163,11 +189,12 @@ let controller = {
           if (results.length > 0) {
             if (results[0].cookId == req.userId) {
               connection.query(
-                "UPDATE meal SET name=?, price=?, maxAmountOfParticipants=?",
+                "UPDATE meal SET name=?, price=?, maxAmountOfParticipants=? WHERE id =",
                 [
                   updatedMeal.name,
                   updatedMeal.price,
                   updatedMeal.maxAmountOfParticipants,
+                  mealId,
                 ],
                 function (error, results, fields) {
                   // When done with the connection, release it.

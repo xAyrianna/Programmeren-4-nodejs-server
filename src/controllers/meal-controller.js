@@ -24,6 +24,10 @@ let controller = {
   },
   addMeal: (req, res, next) => {
     let meal = req.body;
+    let deliveryDate = new Date(meal.dateTime)
+      .toISOString()
+      .slice(0, 19)
+      .replace("T", " ");
 
     dbconnection.getConnection(function (err, connection) {
       if (err) throw err;
@@ -33,7 +37,7 @@ let controller = {
         [
           meal.name,
           meal.description,
-          meal.dateTime,
+          deliveryDate,
           meal.imageUrl,
           meal.price,
           req.userId,

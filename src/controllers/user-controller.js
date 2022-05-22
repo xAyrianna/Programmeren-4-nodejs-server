@@ -2,16 +2,32 @@ const assert = require("assert");
 const dbconnection = require("../../database/dbconnection");
 const logger = require("../config/config").logger;
 
+const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+const phoneRegex = /(06)(\s|\-|)\d{8}|31(\s6|\-6|6)\d{8}/;
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.{8,})/;
+
 let controller = {
   validateUser: (req, res, next) => {
     let user = req.body;
-    let { firstName, lastName, emailAdress, password } = user;
+    let { firstName, lastName, emailAdress, password, phoneNumber } = user;
+    let emailIsValid = emailRegex.test(emailAdress);
+    let passwordIsValid = passwordRegex.test(password);
+    let phoneNumberIsValid = phoneRegex.test(phoneNumber);
 
     try {
       assert(typeof firstName === "string", "Firstname must be a string");
       assert(typeof lastName === "string", "Lastname must be a string");
       assert(typeof emailAdress === "string", "EmailAddress must be a string");
       assert(typeof password === "string", "Password must be a string");
+      assert(
+        emailIsValid,
+        "Email is invalid. Make sure to have characters before and after the @ and that the domain length after the . is either 2 or 3"
+      );
+      assert(
+        passwordIsValid,
+        "Password is invalid. Make sure the password has at least a uppercase letter, one digit and is 8 characters long"
+      );
+      assert(phoneNumberIsValid, "Phonenumber is invalid");
       next();
     } catch (err) {
       const error = {
@@ -200,6 +216,7 @@ let controller = {
             id,
           ],
           function (error, results, fields) {
+            connection.release();
             if (error) {
               logger.info(error.sqlMessage);
               res.status(401).json({

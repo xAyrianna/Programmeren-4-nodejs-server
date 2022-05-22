@@ -4,6 +4,9 @@ const jwt = require("jsonwebtoken");
 const jwtSecretKey = require("../config/config").jwtSecretKey;
 const logger = require("../config/config").logger;
 
+const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.{8,})/;
+
 let controller = {
   login: (req, res, next) => {
     //Assert for validation
@@ -90,6 +93,9 @@ let controller = {
   validateLogin: (req, res, next) => {
     //Make sure you have the expected input
     logger.debug("validate login called");
+    let emailIsValid = emailRegex.test(req.body.emailAdress);
+    let passwordIsValid = passwordRegex.test(req.body.password);
+
     try {
       assert(
         typeof req.body.emailAdress === "string",
@@ -100,6 +106,14 @@ let controller = {
         "password must be a string."
       );
       logger.debug("Both email and password are strings");
+      assert(
+        emailIsValid,
+        "Email is invalid. Make sure to have characters before and after the @ and that the domain length after the . is either 2 or 3"
+      );
+      assert(
+        passwordIsValid,
+        "Password is invalid. Make sure the password has at least a uppercase letter, one digit and is 8 characters long"
+      );
       next();
     } catch (err) {
       const error = {
@@ -115,7 +129,7 @@ let controller = {
       logger.warn("Authorization header is missing!");
       res.status(401).json({
         status: 401,
-        error: "Authorization header is missing!",
+        message: "Authorization header is missing!",
         datetime: new Date().toISOString,
       });
     } else {

@@ -274,7 +274,14 @@ let controller = {
             connection.release();
 
             // Handle error after the release.
-            if (error) throw error;
+            if (error) {
+              logger.debug(error.sqlMessage);
+              res.status(400).json({
+                status: 400,
+                message:
+                  "This user has meals to their name, make sure to delete the meals first.",
+              });
+            }
 
             // Don't use the connection here, it has been returned to the dbconnection.
             if (results.affectedRows > 0) {

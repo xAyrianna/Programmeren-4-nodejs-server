@@ -53,8 +53,10 @@ let controller = {
 
               const { password, ...userinfo } = results[0];
               const payload = {
-                userId: userinfo.id,
+                userid: userinfo.id,
               };
+
+              logger.debug(payload);
 
               jwt.sign(
                 payload,

@@ -23,7 +23,7 @@ describe("Manage users", () => {
       // Use the connection
       connection.query("DELETE FROM meal;", function (error, results, fields) {
         // When done with the connection, release it.
-
+        connection.release();
         // Handle error after the release.
         if (error) throw error;
         // Let op dat je done() pas aanroept als de query callback eindigt!
@@ -31,21 +31,25 @@ describe("Manage users", () => {
       connection.query(
         "DELETE FROM meal_participants_user;",
         function (error, results, fields) {
+          connection.release();
           if (error) throw error;
         }
       );
       connection.query("DELETE FROM user;", function (error, results, fields) {
+        connection.release();
         if (error) throw error;
       });
       connection.query(
         "ALTER TABLE user AUTO_INCREMENT = 1;",
         function (error, results, fields) {
+          connection.release();
           if (error) throw error;
         }
       );
       connection.query(
         "ALTER TABLE meal AUTO_INCREMENT = 1;",
         function (error, results, fields) {
+          connection.release();
           if (error) throw error;
         }
       );
@@ -53,7 +57,7 @@ describe("Manage users", () => {
         "INSERT INTO user (firstName, lastName, emailAdress, password, phoneNumber, street, city) VALUES(?,?,?,?,?,?,?);",
         ["Davide", "Ambesi", "d.ambesi@avans.nl", "secret", "", "", ""],
         function (error, results, fields) {
-          connection.release;
+          connection.release();
 
           if (error) throw error;
         }
@@ -62,14 +66,15 @@ describe("Manage users", () => {
         "INSERT INTO user (firstName, lastName, emailAdress, password, phoneNumber, street, city) VALUES(?,?,?,?,?,?,?);",
         ["Test", "Tester", "tTester@email.com", "secret", "", "", ""],
         function (error, results, fields) {
+          connection.release();
           if (error) throw error;
         }
       );
       connection.query(
-        "INSERT INTO meal (name, description, dateTime, imageUrl, price) VALUES(?,?,?,?,?);",
-        ["testMeal", "Meal to test", deliveryDate, "secret", 6.0],
+        "INSERT INTO meal (name, description, dateTime, imageUrl, price, cookId) VALUES(?,?,?,?,?,?);",
+        ["testMeal", "Meal to test", deliveryDate, "secret", 6.0, 1],
         function (error, results, fields) {
-          connection.release;
+          connection.release();
 
           if (error) throw error;
           done();
@@ -78,27 +83,6 @@ describe("Manage users", () => {
     });
   });
   describe("UC-201 Register /api/user", () => {
-    it("User has been successfully added", (done) => {
-      chai
-        .request(server)
-        .post("/api/user")
-        .send({
-          firstName: "Test2",
-          lastName: "Tester",
-          emailAdress: "tTester2@email.com",
-          password: "secret",
-          street: "",
-          city: "",
-          phoneNumber: "",
-        })
-        .end((err, res) => {
-          res.should.be.an("object");
-          let { status, message } = res.body;
-          status.should.equal(201);
-          message.should.be.a("string").that.equals("User has been added");
-          done();
-        });
-    });
     it("When a required input is missing, a valid response should be returned", (done) => {
       chai
         .request(server)
@@ -107,10 +91,10 @@ describe("Manage users", () => {
           //firstname is missing
           lastName: "Doe",
           emailAdress: "j.doe@servefr.com",
-          password: "secret",
+          password: "Secret11",
           street: "",
           city: "",
-          phoneNumber: "",
+          phoneNumber: "06 12345678",
         })
         .end((err, res) => {
           res.should.be.an("object");
@@ -122,7 +106,32 @@ describe("Manage users", () => {
           done();
         });
     });
-    it("When a user already exists, a valid response should be returned", (done) => {
+    it("When an invalid emailAddress has been given, a valid response should be returned", (done) => {
+      chai
+        .request(server)
+        .post("/api/user")
+        .send({
+          firstName: "Test2",
+          lastName: "Tester",
+          emailAdress: "tTester2@email.m",
+          password: "Secret11",
+          street: "",
+          city: "",
+          phoneNumber: "06 12345678",
+        })
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(400);
+          message.should.be
+            .a("string")
+            .that.equals(
+              "Email is invalid. Make sure to have characters before and after the @ and that the domain length after the . is either 2 or 3"
+            );
+          done();
+        });
+    });
+    it("When an invalid password has been given, a valid response should be returned", (done) => {
       chai
         .request(server)
         .post("/api/user")
@@ -130,10 +139,35 @@ describe("Manage users", () => {
           firstName: "Test2",
           lastName: "Tester",
           emailAdress: "tTester2@email.com",
-          password: "secret",
+          password: "ecret11",
           street: "",
           city: "",
-          phoneNumber: "",
+          phoneNumber: "06 12345678",
+        })
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(400);
+          message.should.be
+            .a("string")
+            .that.equals(
+              "Password is invalid. Make sure the password has at least a uppercase letter, one digit and is 8 characters long"
+            );
+          done();
+        });
+    });
+    it("When a user already exists, a valid response should be returned", (done) => {
+      chai
+        .request(server)
+        .post("/api/user")
+        .send({
+          firstName: "Test2",
+          lastName: "Tester",
+          emailAdress: "tTester@email.com",
+          password: "Secret11",
+          street: "",
+          city: "",
+          phoneNumber: "06 12345678",
         })
         .end((err, res) => {
           res.should.be.an("object");
@@ -142,8 +176,29 @@ describe("Manage users", () => {
           message.should.be
             .a("string")
             .that.equals(
-              "User with emailaddress: tTester2@email.com already exists."
+              "User with emailaddress: tTester@email.com already exists."
             );
+          done();
+        });
+    });
+    it("User has been successfully added", (done) => {
+      chai
+        .request(server)
+        .post("/api/user")
+        .send({
+          firstName: "Test2",
+          lastName: "Tester",
+          emailAdress: "tTester2@email.com",
+          password: "Secret11",
+          street: "",
+          city: "",
+          phoneNumber: "06 12345678",
+        })
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(201);
+          message.should.be.a("string").that.equals("User has been added");
           done();
         });
     });
@@ -153,7 +208,13 @@ describe("Manage users", () => {
       dbconnection.getConnection(function (err, connection) {
         if (err) throw err;
 
+        connection.query("DELETE FROM meal", function (err, results, fields) {
+          connection.release();
+          if (err) throw err;
+        });
+
         connection.query("DELETE FROM user", function (err, results, fields) {
+          connection.release();
           if (err) throw err;
         });
         connection.query(
@@ -187,7 +248,7 @@ describe("Manage users", () => {
           ["Davide", "Ambesi", "d.ambesi@avans.nl", "secret", "", "", ""],
           function (error, results, fields) {
             if (error) throw error;
-            connection.release;
+            connection.release();
           }
         );
       });
@@ -208,7 +269,7 @@ describe("Manage users", () => {
           ],
           function (error, result, fields) {
             if (error) throw error;
-            connection.release;
+            connection.release();
           }
         );
       });
@@ -306,6 +367,19 @@ describe("Manage users", () => {
     });
   });
   describe("UC-204 Get userprofile by id /api/user/:id", () => {
+    it("User has unauthorized token", (done) => {
+      chai
+        .request(server)
+        .get("/api/user/1")
+        .set("authorization", "Bearer " + "unauthorized token")
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(401);
+          message.should.be.an("string").that.equals("Not authorized");
+          done();
+        });
+    });
     it("When id doesn't exist, a valid response should be returned", (done) => {
       chai
         .request(server)
@@ -330,7 +404,7 @@ describe("Manage users", () => {
           ["Test2", "Tester", "tTester2@email.com", "hidden", "", "", ""],
           function (error, results, fields) {
             if (error) throw error;
-            connection.release;
+            connection.release();
           }
         );
       });
@@ -354,13 +428,13 @@ describe("Manage users", () => {
         .put("/api/user/1")
         .set("authorization", "Bearer " + jwt.sign({ userid: 1 }, jwtSecretKey))
         .send({
-          //firstname is missing
+          firstName: "John",
           lastName: "Doe",
-          emailAdress: "j.doe@servefr.com",
-          password: "secret",
+          //email is missing
+          password: "Secret12",
           street: "",
           city: "",
-          phoneNumber: "",
+          phoneNumber: "06 12345678",
         })
         .end((err, res) => {
           res.should.be.an("object");
@@ -368,7 +442,30 @@ describe("Manage users", () => {
           status.should.equal(400);
           message.should.be
             .a("string")
-            .that.equals("Firstname must be a string");
+            .that.equals("EmailAddress must be a string");
+          done();
+        });
+    });
+    it("When an invalid phoneNumber has been given, a valid response should be returned", (done) => {
+      chai
+        .request(server)
+        .put("/api/user/3")
+        .set("authorization", "Bearer " + jwt.sign({ userid: 3 }, jwtSecretKey))
+        .send({
+          firstName: "Test2",
+          lastName: "Tester",
+          emailAdress: "tTester2@email.com",
+          password: "Secret12",
+          street: "",
+          isActive: "1",
+          city: "",
+          phoneNumber: "06 12378",
+        })
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(400);
+          message.should.be.a("string").that.equals("Phonenumber is invalid");
           done();
         });
     });
@@ -381,10 +478,10 @@ describe("Manage users", () => {
           firstName: "John",
           lastName: "Doe",
           emailAdress: "j.doe@servefr.com",
-          password: "secret",
+          password: "Secret12",
           street: "",
           city: "",
-          phoneNumber: "",
+          phoneNumber: "06 12345678",
         })
         .end((err, res) => {
           res.should.be.an("object");
@@ -393,6 +490,30 @@ describe("Manage users", () => {
           message.should.be
             .a("string")
             .that.equals("Could not find user with id: 6");
+          done();
+        });
+    });
+    it("When a user is not logged in, a valid response should be retured", (done) => {
+      chai
+        .request(server)
+        .put("/api/user/2")
+        .send({
+          firstName: "Test2",
+          lastName: "Tester",
+          emailAdress: "tTester2@email.com",
+          password: "Secret12",
+          street: "",
+          isActive: "1",
+          city: "",
+          phoneNumber: "06 12345678",
+        })
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(401);
+          message.should.be
+            .a("string")
+            .that.equals("Authorization header is missing!");
           done();
         });
     });
@@ -405,22 +526,22 @@ describe("Manage users", () => {
           firstName: "Test2",
           lastName: "Tester",
           emailAdress: "tTester2@email.com",
-          password: "hidden",
+          password: "Secret12",
           street: "",
           isActive: "1",
           city: "",
-          phoneNumber: "",
+          phoneNumber: "06 12345678",
         })
         .end((err, res) => {
           res.should.be.an("object");
-          let { status, message } = res.body;
+          let { status, result } = res.body;
           status.should.equal(200);
           done();
         });
     });
   });
   describe("UC-206 Delete user by id /api/user/:id", () => {
-    it("When id doesnt exist, a valid response should be returned", (done) => {
+    it("When user doesnt exist, a valid response should be returned", (done) => {
       chai
         .request(server)
         .delete("/api/user/6")
@@ -432,6 +553,35 @@ describe("Manage users", () => {
           message.should.be
             .a("string")
             .that.equals("Could not find user with id: 6");
+          done();
+        });
+    });
+    it("When a user is not logged in, a valid response should be retured", (done) => {
+      chai
+        .request(server)
+        .delete("/api/user/2")
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(401);
+          message.should.be
+            .a("string")
+            .that.equals("Authorization header is missing!");
+          done();
+        });
+    });
+    it("When user is not the owner of the meal, a valid response should be returned", (done) => {
+      chai
+        .request(server)
+        .delete("/api/user/2")
+        .set("authorization", "Bearer " + jwt.sign({ userid: 1 }, jwtSecretKey))
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(403);
+          message.should.be
+            .a("string")
+            .that.equals("You can only delete your own profile");
           done();
         });
     });
@@ -471,15 +621,53 @@ describe("Manage authentication", () => {
           done();
         });
     });
-    it.skip("When an invalid emailAddress has been given, a valid response should be returned", (done) => {});
-    it.skip("When an invalid password has been given, a valid response should be returned", (done) => {});
+    it("When an invalid emailAddress has been given, a valid response should be returned", (done) => {
+      chai
+        .request(server)
+        .post("/api/auth/login")
+        .send({
+          emailAdress: "tTester2@email.m",
+          password: "Secret12",
+        })
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(400);
+          message.should.be
+            .a("string")
+            .that.equals(
+              "Email is invalid. Make sure to have characters before and after the @ and that the domain length after the . is either 2 or 3"
+            );
+          done();
+        });
+    });
+    it("When an invalid password has been given, a valid response should be returned", (done) => {
+      chai
+        .request(server)
+        .post("/api/auth/login")
+        .send({
+          emailAdress: "tTester2@email.com",
+          password: "secret12",
+        })
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(400);
+          message.should.be
+            .a("string")
+            .that.equals(
+              "Password is invalid. Make sure the password has at least a uppercase letter, one digit and is 8 characters long"
+            );
+          done();
+        });
+    });
     it("When user does not exist a valid response should be returned", (done) => {
       chai
         .request(server)
         .post("/api/auth/login")
         .send({
-          emailAdress: "lalaa",
-          password: "secret",
+          emailAdress: "User@NoExist.com",
+          password: "Secret11",
         })
         .end((err, res) => {
           res.should.be.an("object");
@@ -487,7 +675,7 @@ describe("Manage authentication", () => {
           status.should.equal(404),
             message.should.be
               .a("string")
-              .that.equals("User with email lalaa not found.");
+              .that.equals("User with email User@NoExist.com not found.");
           done();
         });
     });
@@ -497,7 +685,7 @@ describe("Manage authentication", () => {
         .post("/api/auth/login")
         .send({
           emailAdress: "tTester2@email.com",
-          password: "hidden",
+          password: "Secret12",
         })
         .end((err, res) => {
           res.should.be.an("object");
@@ -508,6 +696,22 @@ describe("Manage authentication", () => {
   });
 });
 describe("Manage meals", () => {
+  before((done) => {
+    dbconnection.getConnection(function (err, connection) {
+      if (err) throw err;
+
+      connection.query(
+        "INSERT INTO meal (name, description, dateTime, imageUrl, price, cookId) VALUES(?,?,?,?,?,?);",
+        ["testMeal", "Meal to test", deliveryDate, "secret", 6.0, 1],
+        function (error, results, fields) {
+          connection.release();
+
+          if (error) throw error;
+          done();
+        }
+      );
+    });
+  });
   describe("UC-301 create a meal /api/meal", () => {
     it("When a required input is missing, a valid response should be returned", (done) => {
       chai
@@ -554,9 +758,9 @@ describe("Manage meals", () => {
         })
         .end((err, res) => {
           res.should.be.an("object");
-          let { status, error } = res.body;
+          let { status, message } = res.body;
           status.should.equal(401);
-          error.should.be
+          message.should.be
             .a("string")
             .that.equals("Authorization header is missing!");
           done();
@@ -584,6 +788,208 @@ describe("Manage meals", () => {
           res.should.be.an("object");
           let { status } = res.body;
           status.should.equal(201);
+          done();
+        });
+    });
+  });
+  describe("UC-302 update meal /api/meal:", () => {
+    it("When a required input is missing, a valid response should be returned", (done) => {
+      chai
+        .request(server)
+        .put("/api/meal/1")
+        .set("authorization", "Bearer " + jwt.sign({ userid: 1 }, jwtSecretKey))
+        .send({
+          //name is missing
+          price: "5.00",
+          maxAmountOfParticipants: 3,
+        })
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(400);
+          message.should.be.a("string").that.equals("Name must be a string.");
+          done();
+        });
+    });
+    it("When a user is not logged in, a valid response should be retured", (done) => {
+      chai
+        .request(server)
+        .put("/api/meal/1")
+        .send({
+          name: "testMeal",
+          price: "5.00",
+          maxAmountOfParticipants: 4,
+        })
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(401);
+          message.should.be
+            .a("string")
+            .that.equals("Authorization header is missing!");
+          done();
+        });
+    });
+    it("When user is not the owner of the meal, a valid response should be returned", (done) => {
+      chai
+        .request(server)
+        .put("/api/meal/2")
+        .set("authorization", "Bearer " + jwt.sign({ userid: 2 }, jwtSecretKey))
+        .send({
+          name: "testMeal",
+          price: "5.00",
+          maxAmountOfParticipants: 4,
+        })
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(403);
+          message.should.be
+            .a("string")
+            .that.equals("You can only update your own meals");
+          done();
+        });
+    });
+    it("When the meal doesnt exist, a valid response should be returned", (done) => {
+      chai
+        .request(server)
+        .put("/api/meal/7")
+        .set("authorization", "Bearer " + jwt.sign({ userid: 2 }, jwtSecretKey))
+        .send({
+          name: "testMeal",
+          price: "5.00",
+          maxAmountOfParticipants: 4,
+        })
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(404);
+          message.should.be
+            .a("string")
+            .that.equals("Could not find meal with id: 7.");
+          done();
+        });
+    });
+    it("Meal succesfully updated", (done) => {
+      chai
+        .request(server)
+        .put("/api/meal/2")
+        .set("authorization", "Bearer " + jwt.sign({ userid: 1 }, jwtSecretKey))
+        .send({
+          name: "test Soup + bread",
+          price: "5.00",
+          maxAmountOfParticipants: 4,
+        })
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(200);
+          message.should.be
+            .a("string")
+            .that.equals("Meal with id: 2 has been updated");
+          done();
+        });
+    });
+  });
+  describe("UC-303 get list of meals /api/meal", () => {
+    it("List of meals is shown", (done) => {
+      chai
+        .request(server)
+        .get("/api/meal")
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, result } = res.body;
+          status.should.equal(200);
+          result.should.be.an("array");
+          done();
+        });
+    });
+  });
+  describe("UC-304 get details of meal /api/meal/:mealId", () => {
+    it("When a meal doesnt exist, a valid response is returned", (done) => {
+      chai
+        .request(server)
+        .get("/api/meal/6")
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(404);
+          message.should.be
+            .a("string")
+            .that.equals("Could not find meal with id: 6.");
+          done();
+        });
+    });
+    it("When meal does exist, details are returned", (done) => {
+      chai
+        .request(server)
+        .get("/api/meal/2")
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, result } = res.body;
+          status.should.equal(200);
+          result.should.be.a("array").that.has.a.lengthOf(1);
+          done();
+        });
+    });
+  });
+  describe("UC-305 Delete meal /api/meal/:mealId", () => {
+    it("When a user is not logged in, a valid response should be retured", (done) => {
+      chai
+        .request(server)
+        .delete("/api/meal/2")
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(401);
+          message.should.be
+            .a("string")
+            .that.equals("Authorization header is missing!");
+          done();
+        });
+    });
+    it("When user is not the owner of the meal, a valid response should be returned", (done) => {
+      chai
+        .request(server)
+        .delete("/api/meal/2")
+        .set("authorization", "Bearer " + jwt.sign({ userid: 8 }, jwtSecretKey))
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(403);
+          message.should.be
+            .a("string")
+            .that.equals("You can only delete your own meals");
+          done();
+        });
+    });
+    it("When the meal doesnt exist, a valid response should be returned", (done) => {
+      chai
+        .request(server)
+        .delete("/api/meal/7")
+        .set("authorization", "Bearer " + jwt.sign({ userid: 2 }, jwtSecretKey))
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(404);
+          message.should.be
+            .a("string")
+            .that.equals("Could not find meal with id: 7.");
+          done();
+        });
+    });
+    it("Meal is succesfully deleted", (done) => {
+      chai
+        .request(server)
+        .delete("/api/meal/2")
+        .set("authorization", "Bearer " + jwt.sign({ userid: 1 }, jwtSecretKey))
+        .end((err, res) => {
+          res.should.be.an("object");
+          let { status, message } = res.body;
+          status.should.equal(200);
+          message.should.be
+            .a("string")
+            .that.equals("Meal has been deleted succesfully");
           done();
         });
     });

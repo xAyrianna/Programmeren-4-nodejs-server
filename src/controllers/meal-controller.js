@@ -180,6 +180,7 @@ let controller = {
         "SELECT * FROM meal WHERE id = ?;",
         [mealId],
         function (error, results, fields) {
+          connection.release();
           logger.debug("#Results = ", results.length);
 
           if (error) {
@@ -189,7 +190,7 @@ let controller = {
           if (results.length > 0) {
             if (results[0].cookId == req.userId) {
               connection.query(
-                "UPDATE meal SET name=?, price=?, maxAmountOfParticipants=? WHERE id =",
+                "UPDATE meal SET name=?, price=?, maxAmountOfParticipants=? WHERE id =?",
                 [
                   updatedMeal.name,
                   updatedMeal.price,
@@ -240,6 +241,7 @@ let controller = {
         "SELECT * FROM meal WHERE id = ?;",
         [mealId],
         function (error, results, fields) {
+          connection.release();
           logger.debug("#Results = ", results.length);
 
           if (error) {
